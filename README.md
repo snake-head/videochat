@@ -1,30 +1,22 @@
 # VideoChat
 
-VideoChat is a multifunctional video question answering tool that combines the functions of Action Recognition, Visual Captioning and ChatGPT. Our solution generates dense, descriptive captions for any object and action in a video, offering a range of language styles to suit different user preferences. It supports users to have conversations in different lengths, emotions, authenticity of language.
-- Video-Text Generation
-- Chat about uploaded video
-- Interactive demo
 
-# :fire: Updates
+This is a video based on ask anyting_ Chat_ With_ The Test harness built by ChatGPT module. You can batch input videos and questions for testing. And use ChatGPT for scoring.
 
-- **2023/04/19**: Code Release
+# Updates
 
-# :speech_balloon: Example
+- **2023/07/12**: Initial
 
-![images](assert/hugging.png)
-![images](assert/dancing.png)
-![images](assert/dancing2.png)
-
-# :running: Usage
+# Usage
 
 ```shell
 # We recommend using conda to manage the environment and use python3.8.16  
-conda create -n chatvideo python=3.8.16  
-conda activate chatvideo  
+conda create -n videochat python=3.8.16  
+conda activate videochat 
   
 # Clone the repository:  
-git clone https://github.com/OpenGVLab/Ask-Anything.git  
-cd ask-anything/video_chat  
+git clone https://github.com/snake-head/videochat.git
+cd videochat
   
 # Install dependencies:  
 pip install -r requirements.txt  
@@ -49,5 +41,5 @@ python app.py
 
 # Acknowledgement
 
-The project is based on [InternVideo](https://github.com/OpenGVLab/InternVideo), [Tag2Text](https://github.com/xinyu1205/Tag2Text), [GRiT](https://github.com/JialianW/GRiT), [mrm8488](https://huggingface.co/mrm8488/flan-t5-large-finetuned-openai-summarize_from_feedback) and [ChatGPT](https://openai.com/blog/chatgpt). Thanks for the authors for their efforts.
+The project is based on [Ask-Anything](https://github.com/OpenGVLab/Ask-Anything/), [InternVideo](https://github.com/OpenGVLab/InternVideo), [Tag2Text](https://github.com/xinyu1205/Tag2Text), [GRiT](https://github.com/JialianW/GRiT), [mrm8488](https://huggingface.co/mrm8488/flan-t5-large-finetuned-openai-summarize_from_feedback) and [ChatGPT](https://openai.com/blog/chatgpt). Thanks for the authors for their efforts.
 

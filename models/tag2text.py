@@ -217,6 +217,26 @@ class Tag2Text_Caption(nn.Module):
                 return captions, tag_input[0:int(len(tag_input)/num_beams)]            
         return captions
 
+    def generate_sublists(self, image, sample=False, num_beams=3, max_length=30, min_length=10, top_p=0.9,
+                          repetition_penalty=1.0, tag_input=None, return_tag_predict=False):
+        n = image.shape[0]  # total number of images
+        captions = []
+        tags = []
+        # iterate over image sub-tensors of size 10 or less
+        for i in range(0, n, 50):
+            image_subtensor = image[i:i + 50]  # get subtensor of size 10 or less
+
+            # call original generate function on image subtensor
+            sublist_captions, sublist_tags = self.generate(image_subtensor, sample=sample, num_beams=num_beams, max_length=max_length,
+                                             min_length=min_length, top_p=top_p, repetition_penalty=repetition_penalty,
+                                             tag_input=tag_input, return_tag_predict=return_tag_predict)
+
+            # append sublist captions to overall captions
+            captions.extend(sublist_captions)
+            tags.extend(sublist_tags)
+
+        return captions, tags
+
 
 def tag2text_caption(pretrained='',**kwargs):
     model = Tag2Text_Caption(**kwargs)

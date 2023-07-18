@@ -13,6 +13,7 @@ from langchain.llms.openai import OpenAI
 import re
 import gradio as gr
 import openai
+import ast
 
 
 def cut_dialogue_history(history_memory, keep_last_n_words=400):
@@ -33,60 +34,71 @@ def cut_dialogue_history(history_memory, keep_last_n_words=400):
 
 class ConversationBot:
     def __init__(self):
+        self.system_prompt = None
+        self.openai_api_key = None
         self.memory = ConversationBufferMemory(memory_key="chat_history", output_key='output')
         self.tools = []
 
-    def run_text(self, text, state):
+    def run_text(self, question, llm):
         # self.agent.memory.buffer = cut_dialogue_history(self.agent.memory.buffer, keep_last_n_words=500)
         # res = self.agent({"input": text.strip()})
-        res = openai.Completion.create(
-            engine="text-davinci-003",  # 使用 GPT-4 模型的引擎名称（请注意，这里使用的是虚构的名称）
-            prompt=text.strip(),  # 用户的输入
-            max_tokens=500,  # 生成回复的最大长度
-            temperature=0.8  # 控制回复的随机性，可以调整该值
+        openai.api_key = self.openai_api_key
+        response = openai.ChatCompletion.create(
+            model=llm,
+            messages=[
+                {
+                    "role": "system",
+                    "content": self.system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": question
+                }
+            ],
+            temperature=1,
+            max_tokens=2048,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0
         )
         # res['output'] = res['output'].replace("\\", "/")
         # response = res['output'] 
-        response = res.choices[0].text.strip()
-        state = state + [(text, response)]
         # print(f"\nProcessed run_text, Input text: {text}\nCurrent state: {state}\n"
         #       f"Current Memory: {self.agent.memory.buffer}")
-        print(f"\nProcessed run_text, Input text: {text}\nCurrent state: {state}\n")
-        return state, state
+        answer = response.choices[0].message.content
+        print(f"\nQuestion: {question}\nAnswer: {answer}\n")
+        return answer
 
-
-    def init_agent(self, openai_api_key, image_caption, dense_caption, video_caption, tags, state):
-        chat_history =''
-        PREFIX = "ChatVideo is a chatbot that chats with you based on video descriptions."
-        FORMAT_INSTRUCTIONS = """
-        When you have a response to say to the Human,  you MUST use the format:
-        ```
-        {ai_prefix}: [your response here]
-        ```
-        """
-        SUFFIX = f"""You are a chatbot that conducts conversations based on video descriptions. You mainly answer based on the given description, and you can also modify the content according to the tag information, and you can also answer the relevant knowledge of the person or object contained in the video. The second description is a description for one second, so that you can convert it into time. When describing, please mainly refer to the sceond description. Dense caption is to give content every five seconds, you can disambiguate them in timing. But you don't create a video plot out of nothing.
-
-                Begin!
-
-                Video tags are: {tags}
-
-                The second description of the video is: {image_caption}
-
-                The dense caption of the video is: {dense_caption}
-
-                The general description of the video is: {video_caption}"""+"""Previous conversation history {chat_history}
-
-                New input: {input}
-
-                {agent_scratchpad}
-                """
+    def init_agent(self, openai_api_key, image_caption, dense_caption, video_caption, tags, action, subtitle):
+        self.openai_api_key = openai_api_key
+        chat_history = ''
+        system_prompt = \
+            f"""
+                You are a chatbot that conducts conversations based on video descriptions. You mainly answer based on the given description, and you can also answer the relevant knowledge of the person or object contained in the video.
+                The description is given in the following format: the purpose of the description - the type of description - the content of the description.
+                '''
+                The action description provides the main actions that appear in the video for the next five seconds every five seconds.                '''
+                Action description:
+                {action}
+                '''
+                The frame description is a description for one second, so that you can convert it into time. When describing, please mainly refer to the frame description.
+                Frame description:
+                {image_caption}
+                '''
+                Dense caption is to give content every five seconds, you can disambiguate them in timing.
+                Dense caption:
+                {dense_caption}
+                '''
+                Subtitles provide the content of the person's speech during a certain time period in the video. You can infer what happened in the video based on it.
+                Subtitle:
+                {subtitle}
+            """
         self.memory.clear()
         if not openai_api_key.startswith('sk-'):
-            return gr.update(visible = False),state, state, "Please paste your key here !"
-        self.llm = OpenAI(temperature=0, openai_api_key=openai_api_key,model_name="gpt-4")
-        self.prompt = {'prefix': PREFIX, 'format_instructions': FORMAT_INSTRUCTIONS, 'suffix': SUFFIX}
-        print(self.prompt)
-        #openai.api_base = 'https://closeai.deno.dev/v1'  
+            print('OPEN_API_KEY ERROR')
+        self.system_prompt = system_prompt
+        print(self.system_prompt)
+        # openai.api_base = 'https://closeai.deno.dev/v1'
         # self.agent = initialize_agent(
         #     self.tools,
         #     self.llm,
@@ -95,9 +107,63 @@ class ConversationBot:
         #     memory=self.memory,
         #     return_intermediate_steps=True,
         #     agent_kwargs={'prefix': PREFIX, 'format_instructions': FORMAT_INSTRUCTIONS, 'suffix': SUFFIX}, )
-        state = state + [("I upload a video, Please watch it first! ","I have watch this video, Let's chat!")]
-        return gr.update(visible = True),state, state, openai_api_key
+        return openai_api_key
 
-if __name__=="__main__":
+    def evaluate_qa(self, openai_api_key, qa, llm):
+        openai.api_key = openai_api_key
+        system_prompt = \
+            """
+                评估以下视频问答模型的预测准确性，按照0-5的评分标准：
+
+                ‘’’
+                
+                0：预测答案完全无关或没有回答问题。
+                
+                1：预测答案部分相关，但主要的信息都没有涵盖。
+                
+                2：预测答案中包含了部分正确信息，但并没有完全回答问题。
+                
+                3：预测答案回答了问题的大部分内容，但缺少一些关键信息。
+                
+                4：预测答案几乎完全正确，只是在细节上有一些小的遗漏。
+                
+                5：预测答案完全准确，全面回答了问题。
+                
+                ‘’’
+                你需要给出评分的理由，再进行评分。
+                
+                你的回答必须以字典格式写出：
+                
+                {'reason': 评分理由,'score': 分数,}
+                
+                问题、标准答案以及预测答案分别如下：
+            """
+        response = openai.ChatCompletion.create(
+            model=llm,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": qa
+                }
+            ],
+            temperature=0,
+            max_tokens=2048,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0
+        )
+        answer = response.choices[0].message.content
+        print(f"\nAnswer: {answer}\n")
+        answer = answer.strip("{}").replace("'", "")
+        dict_answer = dict(item.split(": ") for item in answer.split(", "))
+        return dict_answer
+
+
+if __name__ == "__main__":
     import pdb
+
     pdb.set_trace()
