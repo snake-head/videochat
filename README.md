@@ -36,7 +36,7 @@ cd ../..
 export OPENAI_API_KEY={Your_Private_Openai_Key}  
   
 # Run the VideoChat gradio demo.  
-python app.py  
+python test.py  
 ```
 
 # Acknowledgement
