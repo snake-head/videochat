@@ -1,7 +1,7 @@
 # VideoChat
 
 
-This is a video based on ask anyting_ Chat_ With_ The Test harness built by ChatGPT module. You can batch input videos and questions for testing. And use ChatGPT for scoring.
+This is a video based on ask anyting. The Test harness built by ChatGPT module. You can batch input videos and questions for testing. And use ChatGPT for scoring.
 
 # Updates
 
