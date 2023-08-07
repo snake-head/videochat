@@ -59,5 +59,6 @@ class DenseCaptioning():
             file_name = 'output_image_{}.jpg'.format(index)
             visualized_output.save(os.path.join(folder_path, file_name))
         new_caption = dense_pred_to_caption_only_name(predictions)
+        # new_caption = dense_pred_to_caption(predictions)
         # print('new_caption:',new_caption)
         return new_caption
